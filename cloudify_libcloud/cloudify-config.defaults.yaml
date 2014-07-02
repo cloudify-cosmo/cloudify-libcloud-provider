@@ -1,0 +1,56 @@
+connection:
+    cloud_provider_name: "ec2_us_east"
+    access_id: ENTER-ACCESS-ID-HERE
+    secret_key: ENTER-SECRET-KEY-HERE
+#
+networking:
+#    int_network:
+#        create_if_missing: true
+#        name: cloudify-admin-network
+#        cidr: 10.0.0.0/16
+#    subnet:
+#        create_if_missing: true
+#        name: cloudify-admin-network-subnet
+#        cidr: 10.0.0.0/24
+#        availability_zone: us-east-1c
+#    ext_network:
+#        create_if_missing: false # For now, this must be 'create_if_missing': false
+#        name: Ext-Net
+#    router:
+#        create_if_missing: true
+#        name: cloudify-router
+    agents_security_group:
+        create_if_missing: true
+        name: cloudify-sg-agents
+    management_security_group:
+        create_if_missing: true
+        name: cloudify-sg-management
+        cidr: 0.0.0.0/0
+
+compute:
+    management_server:
+#        floating_ip:
+#            create_if_missing: true
+#            ip: ENTER-ELASTIC-IP-HERE
+        user_on_management: ubuntu
+        userhome_on_management: /home/ubuntu
+        instance:
+            create_if_missing: true
+            name: cloudify-management-server
+            image: ENTER-IMAGE-HERE
+            size: ENTER-SIZE-HERE
+        management_keypair:
+            create_if_missing: true
+            name: cloudify-management-kp
+            private_key_target_path: ~/.ssh/cloudify-management-kp.pem
+    agent_servers:
+        agents_keypair:
+            create_if_missing: true
+            name: cloudify-agents-kp
+            private_key_target_path: ~/.ssh/cloudify-agents-kp.pem
+
+cloudify:
+    cloudify_components_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-components_amd64.deb
+    cloudify_core_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-core_amd64.deb
+    cloudify_ui_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-ui_amd64.deb
+    cloudify_ubuntu_agent_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/ubuntu-agent_amd64.deb
