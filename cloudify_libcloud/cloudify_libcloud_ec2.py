@@ -123,7 +123,8 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
                 'management_server',
                 image=inst_conf['image'],
                 size=inst_conf['size'],
-                keypair_name=mgr_kp_conf['name']
+                keypair_name=mgr_kp_conf['name'],
+                security_groups=[msgconf['name']]
             )
 
         # network_interface, created = self.network_interface_controller.\
@@ -383,6 +384,10 @@ class EC2LibcloudSGController(LibcloudSGController):
         if result:
             return result[0]
 
+    def get_by_name(self, name):
+        group_id, group = self._ensure_exist(name)
+        return group
+
     def remove_rules(self, item):
         for rule in item.ingress_rules:
             for pair in rule['group_pairs']:
@@ -453,23 +458,31 @@ class EC2LibcloudServerController(LibcloudServerController):
                     return node.id, node
         return None, None
 
-    def _create(self, name, image=None, size=None, keypair_name=None):
+    def _create(
+            self,
+            name,
+            image=None,
+            size=None,
+            keypair_name=None,
+            security_groups=None):
         selected_size = self.util_controller.get_size(size)
         selected_image = self.util_controller.get_image(image)
 
         node = self.driver.create_node(name=name,
                                        image=selected_image,
                                        size=selected_size,
-                                       ex_keyname=keypair_name)
-        node = self._wait_for_node_to_become_active(node, name)
+                                       ex_keyname=keypair_name,
+                                       ex_security_groups=security_groups)
+        node = self._wait_for_node_to_has_state(node, NodeState.RUNNING)
         return node.id, node
 
-    def _wait_for_node_to_become_active(self, node, name):
+    def _wait_for_node_to_has_state(self, node, state):
         timeout = 300
-        while node.state is not NodeState.RUNNING:
+        while node.state is not state:
             timeout -= 5
             if timeout <= 0:
-                raise RuntimeError('Node failed to start in time')
+                raise RuntimeError('Node failed to obtain state {0} in time'
+                                   .format(state))
             time.sleep(5)
             node = self.get_by_name(node.name)
 
@@ -489,6 +502,7 @@ class EC2LibcloudServerController(LibcloudServerController):
 
     def kill(self, item):
         self.driver.destroy_node(item)
+        self._wait_for_node_to_has_state(item, NodeState.TERMINATED)
 
     def list(self):
         return self.driver.list_nodes()
