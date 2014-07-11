@@ -292,62 +292,62 @@ class LibcloudServerController(BaseController):
     WHAT = "server"
 
 
-if __name__ == "__main__":
-    CONFIG_FILE_NAME = 'cloudify-config.yaml'
-    DEFAULTS_CONFIG_FILE_NAME = 'cloudify-config.defaults.yaml'
-
-    def _read_config(config_file_path):
-        if not config_file_path:
-            config_file_path = CONFIG_FILE_NAME
-        defaults_config_file_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            DEFAULTS_CONFIG_FILE_NAME)
-
-        if not os.path.exists(config_file_path) or not os.path.exists(
-                defaults_config_file_path):
-            if not os.path.exists(defaults_config_file_path):
-                raise ValueError('Missing the defaults configuration file; '
-                                 'expected to find it at {0}'.format(
-                                     defaults_config_file_path))
-            raise ValueError('Missing the configuration file;'
-                             ' expected to find it at {0}'
-                             .format(config_file_path))
-
-        lgr.debug('reading provider config files')
-        with open(config_file_path, 'r') as config_file, \
-                open(defaults_config_file_path, 'r') as defaults_config_file:
-
-            lgr.debug('safe loading user config')
-            user_config = yaml.safe_load(config_file.read())
-
-            lgr.debug('safe loading default config')
-            defaults_config = yaml.safe_load(defaults_config_file.read())
-
-        lgr.debug('merging configs')
-        merged_config = _deep_merge_dictionaries(user_config, defaults_config) \
-            if user_config else defaults_config
-        return merged_config
-
-    def _deep_merge_dictionaries(overriding_dict, overridden_dict):
-        merged_dict = deepcopy(overridden_dict)
-        for k, v in overriding_dict.iteritems():
-            if k in merged_dict and isinstance(v, dict):
-                if isinstance(merged_dict[k], dict):
-                    merged_dict[k] =\
-                        _deep_merge_dictionaries(v, merged_dict[k])
-                else:
-                    raise RuntimeError('type conflict at key {0}'.format(k))
-            else:
-                merged_dict[k] = deepcopy(v)
-        return merged_dict
-
-    provider_config = _read_config("/home/alex/work/GitHub/cloudify-libcloud-provider/cloudify_libcloud/cloudify-config.yaml")
-    manager = ProviderManager(provider_config=provider_config)
-    validation_errors = manager.validate()
-    if validation_errors:
-        print(validation_errors)
-    else:
-        public_ip, private_ip, ssh_key, ssh_user, provider_context =\
-            manager.provision()
-        print(public_ip, private_ip, ssh_key, ssh_user, provider_context)
-        manager.teardown(provider_context=provider_context)
+# if __name__ == "__main__":
+#     CONFIG_FILE_NAME = 'cloudify-config.yaml'
+#     DEFAULTS_CONFIG_FILE_NAME = 'cloudify-config.defaults.yaml'
+#
+#     def _read_config(config_file_path):
+#         if not config_file_path:
+#             config_file_path = CONFIG_FILE_NAME
+#         defaults_config_file_path = os.path.join(
+#             os.path.dirname(os.path.realpath(__file__)),
+#             DEFAULTS_CONFIG_FILE_NAME)
+#
+#         if not os.path.exists(config_file_path) or not os.path.exists(
+#                 defaults_config_file_path):
+#             if not os.path.exists(defaults_config_file_path):
+#                 raise ValueError('Missing the defaults configuration file; '
+#                                  'expected to find it at {0}'.format(
+#                                      defaults_config_file_path))
+#             raise ValueError('Missing the configuration file;'
+#                              ' expected to find it at {0}'
+#                              .format(config_file_path))
+#
+#         lgr.debug('reading provider config files')
+#         with open(config_file_path, 'r') as config_file, \
+#                 open(defaults_config_file_path, 'r') as defaults_config_file:
+#
+#             lgr.debug('safe loading user config')
+#             user_config = yaml.safe_load(config_file.read())
+#
+#             lgr.debug('safe loading default config')
+#             defaults_config = yaml.safe_load(defaults_config_file.read())
+#
+#         lgr.debug('merging configs')
+#         merged_config = _deep_merge_dictionaries(user_config, defaults_config) \
+#             if user_config else defaults_config
+#         return merged_config
+#
+#     def _deep_merge_dictionaries(overriding_dict, overridden_dict):
+#         merged_dict = deepcopy(overridden_dict)
+#         for k, v in overriding_dict.iteritems():
+#             if k in merged_dict and isinstance(v, dict):
+#                 if isinstance(merged_dict[k], dict):
+#                     merged_dict[k] =\
+#                         _deep_merge_dictionaries(v, merged_dict[k])
+#                 else:
+#                     raise RuntimeError('type conflict at key {0}'.format(k))
+#             else:
+#                 merged_dict[k] = deepcopy(v)
+#         return merged_dict
+#
+#     provider_config = _read_config("D:\projects\GitHub\cloudify-libcloud-provider\cloudify_libcloud\cloudify-config.yaml")
+#     manager = ProviderManager(provider_config=provider_config)
+#     validation_errors = manager.validate()
+#     if validation_errors:
+#         print(validation_errors)
+#     else:
+#         public_ip, private_ip, ssh_key, ssh_user, provider_context =\
+#             manager.provision()
+#         print(public_ip, private_ip, ssh_key, ssh_user, provider_context)
+#         manager.teardown(provider_context=provider_context)

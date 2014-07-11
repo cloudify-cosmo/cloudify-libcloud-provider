@@ -236,6 +236,9 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
                                                        res_name)
 
             self.floating_ip_controller.associate(node, floating_ip)
+            node = self.server_controller.get_by_id(node.id)
+            while not node.public_ips[0] == floating_ip.ip:
+                self.floating_ip_controller.associate(node, floating_ip)
 
         ssh_key = expanduser(mgr_kp_conf['private_key_path'])
         ssh_user = mng_conf['user_on_management']
@@ -531,7 +534,6 @@ class EC2LibcloudFloatingIpController(LibcloudFloatingIpController):
         return address.ip, address
 
     def associate(self, node, ip):
-# TODO check address is really associated here
         self.driver.ex_associate_address_with_node(node, ip)
 
     def get_by_id(self, ident):
