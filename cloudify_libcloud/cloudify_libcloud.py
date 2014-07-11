@@ -43,16 +43,31 @@ lgr, flgr = init_logger()
 
 class ProviderManager(BaseProviderClass):
 
+    schema = PROVIDER_CONFIG_SCHEMA
+
+    CONFIG_NAMES_TO_MODIFY = (
+        ('networking', 'agents_security_group'),
+        ('networking', 'management_security_group'),
+        ('compute', 'management_server', 'instance'),
+        ('compute', 'management_server', 'management_keypair'),
+        ('compute', 'agent_servers', 'agents_keypair'),
+    )
+
+    CONFIG_FILES_PATHS_TO_MODIFY = (
+        ('compute', 'agent_servers', 'private_key_path'),
+        ('compute', 'management_server', 'management_keypair',
+            'private_key_path'),
+    )
+
     def __init__(self,
                  provider_config=None,
-                 is_verbose_output=False,
-                 schema=None):
+                 is_verbose_output=False):
         super(ProviderManager, self).\
             __init__(provider_config,
-                     is_verbose_output,
-                     PROVIDER_CONFIG_SCHEMA)
+                     is_verbose_output)
         provider_name = provider_config['connection']['cloud_provider_name']
-        self.mapper = mapper.Mapper(provider_name)
+        from mapper import Mapper
+        self.mapper = Mapper(provider_name)
 
     def validate(self, validation_errors={}):
         connection_conf = self.provider_config['connection']
@@ -79,8 +94,7 @@ class ProviderManager(BaseProviderClass):
         driver = self.get_driver(self.provider_config)
         public_ip, private_ip, ssh_key, ssh_user, provider_context = \
             driver.create_topology()
-        # TODO
-        # driver.copy_files_to_manager(public_ip, ssh_key, ssh_user)
+        driver.copy_files_to_manager(public_ip, ssh_key, ssh_user)
         return public_ip, private_ip, ssh_key, ssh_user, provider_context
 
     def teardown(self, provider_context, ignore_validation=False):
@@ -158,7 +172,8 @@ class LibcloudConnector(object):
     def __init__(self, connection_config):
         self.connection_config = connection_config
         provider_name = self.connection_config['cloud_provider_name']
-        self.mapper = mapper.Mapper(provider_name)
+        from mapper import Mapper
+        self.mapper = Mapper(provider_name)
         self.driver = self.mapper.connect(self.connection_config)
 
     def get_driver(self):
@@ -277,65 +292,62 @@ class LibcloudServerController(BaseController):
     WHAT = "server"
 
 
-# if __name__ == "__main__":
-#     CONFIG_FILE_NAME = 'cloudify-config.yaml'
-#     DEFAULTS_CONFIG_FILE_NAME = 'cloudify-config.defaults.yaml'
-#
-#     def _read_config(config_file_path):
-#
-#         if not config_file_path:
-#             config_file_path = CONFIG_FILE_NAME
-#         defaults_config_file_path = os.path.join(
-#             os.path.dirname(os.path.realpath(__file__)),
-#             DEFAULTS_CONFIG_FILE_NAME)
-#
-#         if not os.path.exists(config_file_path) or not os.path.exists(
-#                 defaults_config_file_path):
-#             if not os.path.exists(defaults_config_file_path):
-#                 raise ValueError('Missing the defaults configuration file; '
-#                                  'expected to find it at {0}'.format(
-#                                      defaults_config_file_path))
-#             raise ValueError('Missing the configuration file;'
-#                              ' expected to find it at {0}'
-#                              .format(config_file_path))
-#
-#         lgr.debug('reading provider config files')
-#         with open(config_file_path, 'r') as config_file, \
-#                 open(defaults_config_file_path, 'r') as defaults_config_file:
-#
-#             lgr.debug('safe loading user config')
-#             user_config = yaml.safe_load(config_file.read())
-#
-#             lgr.debug('safe loading default config')
-#             defaults_config = yaml.safe_load(defaults_config_file.read())
-#
-#         lgr.debug('merging configs')
-#         merged_config = _deep_merge_dictionaries(user_config, defaults_config) \
-#             if user_config else defaults_config
-#         return merged_config
-#
-#     def _deep_merge_dictionaries(overriding_dict, overridden_dict):
-#         merged_dict = deepcopy(overridden_dict)
-#         for k, v in overriding_dict.iteritems():
-#             if k in merged_dict and isinstance(v, dict):
-#                 if isinstance(merged_dict[k], dict):
-#                     merged_dict[k] =\
-#                         _deep_merge_dictionaries(v, merged_dict[k])
-#                 else:
-#                     raise RuntimeError('type conflict at key {0}'.format(k))
-#             else:
-#                 merged_dict[k] = deepcopy(v)
-#         return merged_dict
-#
-#     provider_config = _read_config("D:\projects\GitHub\cloudify-libcloud-provider\cloudify_libcloud\cloudify-config.yaml")
-#     manager = ProviderManager(provider_config=provider_config)
-#     validation_errors = manager.validate()
-#     if validation_errors:
-#         print(validation_errors)
-#     else:
-#         public_ip, private_ip, ssh_key, ssh_user, provider_context =\
-#             manager.provision()
-#         print(public_ip, private_ip, ssh_key, ssh_user, provider_context)
-#         manager.teardown(provider_context=provider_context)
+if __name__ == "__main__":
+    CONFIG_FILE_NAME = 'cloudify-config.yaml'
+    DEFAULTS_CONFIG_FILE_NAME = 'cloudify-config.defaults.yaml'
 
-from cloudify_libcloud import cloudify_libcloud_mapper as mapper
+    def _read_config(config_file_path):
+        if not config_file_path:
+            config_file_path = CONFIG_FILE_NAME
+        defaults_config_file_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            DEFAULTS_CONFIG_FILE_NAME)
+
+        if not os.path.exists(config_file_path) or not os.path.exists(
+                defaults_config_file_path):
+            if not os.path.exists(defaults_config_file_path):
+                raise ValueError('Missing the defaults configuration file; '
+                                 'expected to find it at {0}'.format(
+                                     defaults_config_file_path))
+            raise ValueError('Missing the configuration file;'
+                             ' expected to find it at {0}'
+                             .format(config_file_path))
+
+        lgr.debug('reading provider config files')
+        with open(config_file_path, 'r') as config_file, \
+                open(defaults_config_file_path, 'r') as defaults_config_file:
+
+            lgr.debug('safe loading user config')
+            user_config = yaml.safe_load(config_file.read())
+
+            lgr.debug('safe loading default config')
+            defaults_config = yaml.safe_load(defaults_config_file.read())
+
+        lgr.debug('merging configs')
+        merged_config = _deep_merge_dictionaries(user_config, defaults_config) \
+            if user_config else defaults_config
+        return merged_config
+
+    def _deep_merge_dictionaries(overriding_dict, overridden_dict):
+        merged_dict = deepcopy(overridden_dict)
+        for k, v in overriding_dict.iteritems():
+            if k in merged_dict and isinstance(v, dict):
+                if isinstance(merged_dict[k], dict):
+                    merged_dict[k] =\
+                        _deep_merge_dictionaries(v, merged_dict[k])
+                else:
+                    raise RuntimeError('type conflict at key {0}'.format(k))
+            else:
+                merged_dict[k] = deepcopy(v)
+        return merged_dict
+
+    provider_config = _read_config("/home/alex/work/GitHub/cloudify-libcloud-provider/cloudify_libcloud/cloudify-config.yaml")
+    manager = ProviderManager(provider_config=provider_config)
+    validation_errors = manager.validate()
+    if validation_errors:
+        print(validation_errors)
+    else:
+        public_ip, private_ip, ssh_key, ssh_user, provider_context =\
+            manager.provision()
+        print(public_ip, private_ip, ssh_key, ssh_user, provider_context)
+        manager.teardown(provider_context=provider_context)

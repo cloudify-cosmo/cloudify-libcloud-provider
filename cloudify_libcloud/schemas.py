@@ -108,19 +108,16 @@ PROVIDER_CONFIG_SCHEMA = {
                         },
                         "management_keypair": {
                             "type": "object",
-                            "required": [
-                                'create_if_missing',
-                                'name',
-                                'private_key_target_path'
-                            ],
+                            "required": ["private_key_path", "name",
+                                         "create_if_missing"],
                             "properties": {
+                                "private_key_path": {
+                                    "type": "string",
+                                },
                                 "create_if_missing": {
                                     "enum": [True, False],
                                 },
                                 "name": {
-                                    "type": "string",
-                                },
-                                "private_key_target_path": {
                                     "type": "string",
                                 }
                             }
@@ -133,19 +130,16 @@ PROVIDER_CONFIG_SCHEMA = {
                     "properties": {
                         "agents_keypair": {
                             "type": "object",
-                            "required": [
-                                'create_if_missing',
-                                'name',
-                                'private_key_target_path'
-                            ],
+                            "required": ["private_key_path", "name",
+                                         "create_if_missing"],
                             "properties": {
+                                "private_key_path": {
+                                    "type": "string",
+                                },
                                 "create_if_missing": {
                                     "enum": [True, False],
                                 },
                                 "name": {
-                                    "type": "string",
-                                },
-                                "private_key_target_path": {
                                     "type": "string",
                                 }
                             }
@@ -157,26 +151,122 @@ PROVIDER_CONFIG_SCHEMA = {
         "cloudify": {
             "type": "object",
             "required": [
-                'cloudify_components_package_url',
-                'cloudify_core_package_url',
+                'server',
+                'agents',
+                'workflows',
+                'bootstrap'
             ],
             "properties": {
-                "cloudify_components_package_path": {
-                    "type": "string",
+                "resources_prefix": {
+                    "type": "string"
                 },
-                "cloudify_components_package_url": {
-                    "type": "string",
+                "server": {
+                    "type": "object",
+                    "required": [
+                        'packages',
+                    ],
+                    "properties": {
+                        "packages": {
+                            "type": "object",
+                            "required": [
+                                'components_package_url',
+                                'core_package_url',
+                            ],
+                            "properties": {
+                                "components_package_url": {
+                                    "type": "string",
+                                },
+                                "core_package_url": {
+                                    "type": "string",
+                                },
+                                "ui_package_url": {
+                                    "type": "string",
+                                }
+                            },
+                            "additionalProperties": False
+                        },
+                    },
+                    "additionalProperties": False
                 },
-                "cloudify_package_path": {
-                    "type": "string",
+                "agents": {
+                    "type": "object",
+                    "required": [
+                        'packages',
+                        'config',
+                    ],
+                    "properties": {
+                        "packages": {
+                            "type": "object",
+                            'minProperties': 1,
+                        },
+                        "config": {
+                            "type": "object",
+                            "required": ["min_workers", "max_workers",
+                                         "remote_execution_port"],
+                            "properties": {
+                                "min_workers": {
+                                    "type": "number"
+                                },
+                                "max_workers": {
+                                    "type": "number"
+                                },
+                                "remote_execution_port": {
+                                    "type": "number"
+                                },
+                                "user": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": False
+                        },
+                    "additionalProperties": False
+                    }
                 },
-                "cloudify_core_package_url": {
-                    "type": "string",
+                "workflows": {
+                    "type": "object",
+                    "required": ["task_retries", "retry_interval"],
+                    "properties": {
+                        "task_retries": {
+                            "type": "number"
+                        },
+                        "retry_interval": {
+                            "type": "number"
+                        }
+                    },
+                    "additionalProperties": False
                 },
-                "cloudify_packages_path": {
-                    "type": "string",
+                "bootstrap": {
+                    "type": "object",
+                    "properties": {
+                        "ssh": {
+                            "type": "object",
+                            "properties": {
+                                "initial_connectivity_retries": {
+                                    "type": "number"
+                                },
+                                "initial_connectivity_retries_interval": {
+                                    "type": "number"
+                                },
+                                "command_retries": {
+                                    "type": "number"
+                                },
+                                "retries_interval": {
+                                    "type": "number"
+                                },
+                                "connection_attempts": {
+                                    "type": "number"
+                                },
+                                "socket_timeout": {
+                                    "type": "number"
+                                }
+                            },
+                            "additionalProperties": False
+                        }
+                    },
+                    "additionalProperties": False
                 }
-            }
-        }
+            },
+            "additionalProperties": False
+        },
     }
 }

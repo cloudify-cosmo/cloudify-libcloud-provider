@@ -15,17 +15,27 @@
 
 __author__ = 'Oleksandr_Raskosov'
 
-from cloudify_libcloud_common import *
+from cloudify_libcloud import (CosmoOnLibcloudDriver,
+                               LibcloudKeypairController,
+                               LibcloudSGController,
+                               LibcloudFloatingIpController,
+                               LibcloudServerController,
+                               LibcloudValidator)
 from libcloud.compute.types import NodeState
 
 from os.path import expanduser
 import os
 import time
-
+from fabric.api import put, env
 from libcloud.compute.types import KeyPairDoesNotExistError
+import tempfile
+import shutil
+from fabric.context_managers import settings
+import errno
 
 
 CREATE_IF_MISSING = 'create_if_missing'
+TIMEOUT = 3000
 
 
 # declare which ports should be opened during provisioning
@@ -50,6 +60,69 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
         self.util_controller = EC2LibcloudUtilController(connector)
         self.server_controller = EC2LibcloudServerController(
             connector, util_controller=self.util_controller)
+
+    def copy_files_to_manager(self, mgmt_ip, ssh_key, ssh_user):
+        def _copy(userhome_on_management,
+                  keystone_config, agents_key_path,
+                  networking, cloudify_config):
+            ssh_config = self.config['cloudify']['bootstrap']['ssh']
+
+            env.user = ssh_user
+            env.key_filename = ssh_key
+            env.abort_on_prompts = False
+            env.connection_attempts = ssh_config['connection_attempts']
+            env.keepalive = 0
+            env.linewise = False
+            env.pool_size = 0
+            env.skip_bad_hosts = False
+            env.timeout = ssh_config['socket_timeout']
+            env.forward_agent = True
+            env.status = False
+            env.disable_known_hosts = False
+
+            tempdir = tempfile.mkdtemp()
+
+            # TODO: handle failed copy operations
+            put(agents_key_path, userhome_on_management + '/.ssh')
+#            keystone_file_path = _make_keystone_file(tempdir,
+#                                                     keystone_config)
+#            put(keystone_file_path, userhome_on_management)
+#            if networking['neutron_supported_region']:
+#                neutron_file_path = _make_neutron_file(tempdir,
+#                                                       networking)
+#                put(neutron_file_path, userhome_on_management)
+
+            shutil.rmtree(tempdir)
+
+#        def _make_json_file(tempdir, file_basename, data):
+#            file_path = os.path.join(tempdir, file_basename + '.json')
+#            with open(file_path, 'w') as f:
+#                json.dump(data, f)
+#            return file_path
+#
+#        def _make_keystone_file(tempdir, keystone_config):
+#            # put default region in keystone_config file
+#            config = {}
+#            config.update(keystone_config)
+#            config.update({'region': self.config['compute']['region']})
+#            return _make_json_file(tempdir, 'keystone_config', config)
+#
+#        def _make_neutron_file(tempdir, networking):
+#            return _make_json_file(tempdir, 'neutron_config', {
+#                'url': networking['neutron_url']
+#            })
+#
+        compute_config = self.config['compute']
+        mgmt_server_config = compute_config['management_server']
+
+        with settings(host_string=mgmt_ip):
+            _copy(
+                mgmt_server_config['userhome_on_management'],
+                self.config['connection'],
+                expanduser(compute_config['agent_servers']['agents_keypair'][
+                    'private_key_path']),
+                self.config['networking'],
+                self.config.get('cloudify', {}))
 
     def create_topology(self):
         resources = {}
@@ -119,7 +192,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             mgr_kp_conf['name'],
             resources,
             'management_keypair',
-            private_key_target_path=mgr_kp_conf['private_key_target_path']
+            private_key_path=mgr_kp_conf['private_key_path']
         )
         agents_kp_conf = compute_config['agent_servers']['agents_keypair']
         self.keypair_controller.create_or_ensure_exists_log_resources(
@@ -127,7 +200,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             agents_kp_conf['name'],
             resources,
             'agents_keypair',
-            private_key_target_path=agents_kp_conf['private_key_target_path']
+            private_key_path=agents_kp_conf['private_key_path']
         )
 
         node, created = self.server_controller.\
@@ -164,7 +237,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
 
             self.floating_ip_controller.associate(node, floating_ip)
 
-        ssh_key = mgr_kp_conf['private_key_target_path']
+        ssh_key = expanduser(mgr_kp_conf['private_key_path'])
         ssh_user = mng_conf['user_on_management']
 
         node = self.server_controller.get_by_id(node.id)
@@ -173,6 +246,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
         return public_ip, private_ip, ssh_key, ssh_user, self.provider_context
 
     def _delete_resources(self, resources):
+        # TODO support not created keys
         deleted_resources = []
         not_found_resources = []
         failed_to_delete_resources = []
@@ -330,18 +404,28 @@ class EC2LibcloudKeypairController(LibcloudKeypairController):
         else:
             return None, None
 
-    def _create(self, name, private_key_target_path=None):
-        if not private_key_target_path:
-            raise RuntimeError("Must provide private key target path"
-                               " to create keypair")
+    def _create(self, name, private_key_path=None):
+        pk_target_path = expanduser(private_key_path)
+        if os.path.exists(pk_target_path):
+            raise RuntimeError("Can't create keypair {0} - local path for "
+                               "private key already exists: {1}"
+                               .format(name, pk_target_path))
 
         keypair = self.driver.create_key_pair(name)
-        pk_target_path = expanduser(private_key_target_path)
-        self._mkdir(os.path.dirname(private_key_target_path))
+        self._mkdir_p(os.path.dirname(pk_target_path))
         with open(pk_target_path, 'w') as f:
             f.write(keypair.private_key)
             os.system('chmod 600 {0}'.format(pk_target_path))
         return name, keypair
+
+    def _mkdir_p(self, path):
+        path = expanduser(path)
+        try:
+            os.makedirs(path)
+        except OSError, exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                return
+            raise
 
     def get_by_id(self, ident):
         key_pair_id, key_pair = self._ensure_exist(ident)
@@ -447,6 +531,7 @@ class EC2LibcloudFloatingIpController(LibcloudFloatingIpController):
         return address.ip, address
 
     def associate(self, node, ip):
+# TODO check address is really associated here
         self.driver.ex_associate_address_with_node(node, ip)
 
     def get_by_id(self, ident):
@@ -492,7 +577,7 @@ class EC2LibcloudServerController(LibcloudServerController):
         return node.id, node
 
     def _wait_for_node_to_has_state(self, node, state):
-        timeout = 300
+        timeout = TIMEOUT
         while node.state is not state:
             timeout -= 5
             if timeout <= 0:
@@ -544,6 +629,7 @@ class EC2LibcloudUtilController(object):
 
 class EC2LibcloudValidator(LibcloudValidator):
 
+    # TODO support key pair validation (auto_generated, provided)
     def __init__(self,
                  provider_config,
                  validation_errors,
@@ -632,7 +718,9 @@ class EC2LibcloudValidator(LibcloudValidator):
                 .append(err)
         instance_name = instance_config['name']
         instance = self.server_controller.get_by_name(instance_name)
-        if instance and (instance.state is not NodeState.RUNNING):
+        if instance and\
+                (instance.state not in [NodeState.RUNNING,
+                                        NodeState.TERMINATED]):
             err = 'config file validation error:' \
                   ' management_server should be in state Running'
             self.validation_errors.setdefault('management_server', [])\

@@ -31,26 +31,48 @@ compute:
     management_server:
         floating_ip:
             create_if_missing: true
-#            ip: 54.83.4.153
-#        user_on_management: ubuntu
-#        userhome_on_management: /home/ubuntu
+#            ip: ENTER-PUBLIC-IP-HERE
+        user_on_management: ubuntu
+        userhome_on_management: /home/ubuntu
         instance:
-#            create_if_missing: true
-#            name: cloudify-management-server
-            image: "ami-fb8e9292"
-            size: "t1.micro"
-#        management_keypair:
-#            create_if_missing: true
-#            name: cloudify-management-kp
-#            private_key_target_path: ~/.ssh/cloudify-management-kp.pem
-#    agent_servers:
-#        agents_keypair:
-#            create_if_missing: true
-#            name: cloudify-agents-kp
-#            private_key_target_path: ~/.ssh/cloudify-agents-kp.pem
+            create_if_missing: true
+            name: cloudify-management-server
+            image: "ami-fa7dba92"
+            size: "m1.medium"
+        management_keypair:
+            create_if_missing: true
+            name: cloudify-management-kp
+            private_key_path: ~/.ssh/cloudify-management-kp.pem
+    agent_servers:
+        agents_keypair:
+            create_if_missing: true
+            name: cloudify-agents-kp
+            private_key_path: ~/.ssh/cloudify-agents-kp.pem
 
-#cloudify:
-#    cloudify_components_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-components_amd64.deb
-#    cloudify_core_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-core_amd64.deb
-#    cloudify_ui_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-ui_amd64.deb
-#    cloudify_ubuntu_agent_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/ubuntu-agent_amd64.deb
+cloudify:
+    resources_prefix: rtest_
+    server:
+        packages:
+            components_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-components_amd64.deb
+            core_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-core_amd64.deb
+            ui_package_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-ui_amd64.deb
+    agents:
+        packages:
+            ubuntu_agent_url: http://gigaspaces-repository-eu.s3.amazonaws.com/org/cloudify3/nightly/cloudify-ubuntu-agent_amd64.deb
+        config:
+            min_workers: 2
+            max_workers: 5
+            remote_execution_port: 22
+            #user: (no default - optional parameter)
+    workflows:
+        task_retries: -1  # -1 means we retry forever
+        retry_interval: 30
+
+    bootstrap:
+        ssh:
+            initial_connectivity_retries: 20
+            initial_connectivity_retries_interval: 15
+            command_retries: 3
+            retries_interval: 3
+            connection_attempts: 10
+            socket_timeout: 100

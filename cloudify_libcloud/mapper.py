@@ -16,7 +16,11 @@
 __author__ = 'Oleksandr_Raskosov'
 
 
-from cloudify_libcloud import cloudify_libcloud_ec2 as ec2
+from ec2 import (EC2CosmoOnLibcloudDriver,
+                 EC2LibcloudUtilController,
+                 EC2LibcloudFloatingIpController,
+                 EC2LibcloudServerController,
+                 EC2LibcloudValidator)
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 
@@ -68,7 +72,7 @@ class Mapper(object):
                               provider_context,
                               provider_config):
         if self.core_provider == Provider.EC2:
-            driver = ec2.EC2CosmoOnLibcloudDriver(provider_config,
+            driver = EC2CosmoOnLibcloudDriver(provider_config,
                                                   provider_context,
                                                   connector)
             return driver
@@ -78,11 +82,11 @@ class Mapper(object):
                            provider_config,
                            validation_errors):
         if self.core_provider == Provider.EC2:
-            util_controller = ec2.EC2LibcloudUtilController(connector)
+            util_controller = EC2LibcloudUtilController(connector)
             floating_ip_controller =\
-                ec2.EC2LibcloudFloatingIpController(connector)
-            server_controller = ec2.EC2LibcloudServerController(connector)
-            validator = ec2.EC2LibcloudValidator(
+                EC2LibcloudFloatingIpController(connector)
+            server_controller = EC2LibcloudServerController(connector)
+            validator = EC2LibcloudValidator(
                 provider_config,
                 validation_errors,
                 util_controller=util_controller,
