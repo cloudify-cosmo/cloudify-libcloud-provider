@@ -73,8 +73,8 @@ class Mapper(object):
                               provider_config):
         if self.core_provider == Provider.EC2:
             driver = EC2CosmoOnLibcloudDriver(provider_config,
-                                                  provider_context,
-                                                  connector)
+                                              provider_context,
+                                              connector)
             return driver
 
     def generate_validator(self,

@@ -219,7 +219,7 @@ PROVIDER_CONFIG_SCHEMA = {
                             },
                             "additionalProperties": False
                         },
-                    "additionalProperties": False
+                        "additionalProperties": False
                     }
                 },
                 "workflows": {
