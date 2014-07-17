@@ -50,10 +50,6 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
         super(EC2CosmoOnLibcloudDriver, self)\
             .__init__(provider_config, provider_context)
         self.keypair_controller = EC2LibcloudKeypairController(connector)
-        # self.network_controller = EC2LibcloudNetworkController(connector)
-        # self.subnet_controller = EC2LibcloudSubnetController(connector)
-        # self.network_interface_controller =\
-        #     EC2LibcloudNetworkInterfaceController(connector)
         self.sg_controller = EC2LibcloudSGController(connector)
         self.floating_ip_controller =\
             EC2LibcloudFloatingIpController(connector)
@@ -62,9 +58,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             connector, util_controller=self.util_controller)
 
     def copy_files_to_manager(self, mgmt_ip, ssh_key, ssh_user):
-        def _copy(userhome_on_management,
-                  keystone_config, agents_key_path,
-                  networking, cloudify_config):
+        def _copy(userhome_on_management, agents_key_path):
             ssh_config = self.config['cloudify']['bootstrap']['ssh']
 
             env.user = ssh_user
@@ -82,47 +76,18 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
 
             tempdir = tempfile.mkdtemp()
 
-            # TODO: handle failed copy operations
             put(agents_key_path, userhome_on_management + '/.ssh')
-#            keystone_file_path = _make_keystone_file(tempdir,
-#                                                     keystone_config)
-#            put(keystone_file_path, userhome_on_management)
-#            if networking['neutron_supported_region']:
-#                neutron_file_path = _make_neutron_file(tempdir,
-#                                                       networking)
-#                put(neutron_file_path, userhome_on_management)
 
             shutil.rmtree(tempdir)
 
-#        def _make_json_file(tempdir, file_basename, data):
-#            file_path = os.path.join(tempdir, file_basename + '.json')
-#            with open(file_path, 'w') as f:
-#                json.dump(data, f)
-#            return file_path
-#
-#        def _make_keystone_file(tempdir, keystone_config):
-#            # put default region in keystone_config file
-#            config = {}
-#            config.update(keystone_config)
-#            config.update({'region': self.config['compute']['region']})
-#            return _make_json_file(tempdir, 'keystone_config', config)
-#
-#        def _make_neutron_file(tempdir, networking):
-#            return _make_json_file(tempdir, 'neutron_config', {
-#                'url': networking['neutron_url']
-#            })
-#
         compute_config = self.config['compute']
         mgmt_server_config = compute_config['management_server']
 
         with settings(host_string=mgmt_ip):
             _copy(
                 mgmt_server_config['userhome_on_management'],
-                self.config['connection'],
                 expanduser(compute_config['agent_servers']['agents_keypair'][
-                    'private_key_path']),
-                self.config['networking'],
-                self.config.get('cloudify', {}))
+                    'private_key_path']))
 
     def create_topology(self):
         resources = {}
@@ -131,26 +96,6 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
         compute_config = self.config['compute']
         mng_conf = compute_config['management_server']
         inst_conf = mng_conf['instance']
-
-        # TODO will be supported later
-        # int_net_conf = self.config['networking']['int_network']
-        # int_net, created = self.network_controller\
-        #     .create_or_ensure_exists_log_resources(int_net_conf,
-        #                                            int_net_conf['name'],
-        #                                            resources,
-        #                                            'int_network',
-        #                                            cidr=int_net_conf['cidr'])
-        #
-        # subnet_conf = self.config['networking']['subnet']
-        # zone = subnet_conf['availability_zone']
-        # subnet, created = self.subnet_controller\
-        #     .create_or_ensure_exists_log_resources(subnet_conf,
-        #                                            subnet_conf['name'],
-        #                                            resources,
-        #                                            'subnet',
-        #                                            vpc_id=int_net.id,
-        #                                            cidr=subnet_conf['cidr'],
-        #                                            a_zone=zone)
 
         # Security group for Cosmo created instances
         asgconf = self.config['networking']['agents_security_group']
@@ -215,15 +160,6 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
                 security_groups=[msgconf['name']]
             )
 
-        # network_interface, created = self.network_interface_controller.\
-        #     create_or_ensure_exists_log_resources(
-        #         None,
-        #         'management_network_interface',
-        #         resources,
-        #         'management_network_interface',
-        #         subnet=subnet
-        #     )
-
         if 'floating_ip' in mng_conf:
             floating_ip_conf = mng_conf['floating_ip']
             res_name = 'management_floating_ip'
@@ -249,7 +185,6 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
         return public_ip, private_ip, ssh_key, ssh_user, self.provider_context
 
     def _delete_resources(self, resources):
-        # TODO support not created keys
         deleted_resources = []
         not_found_resources = []
         failed_to_delete_resources = []
@@ -347,53 +282,6 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
                 failed_to_delete_resources)
 
 
-# class EC2LibcloudNetworkController(core.LibcloudNetworkController):
-#
-#     def _ensure_exist(self, name):
-#         networks = self.driver.ex_list_networks()
-#         if networks:
-#             for item in networks:
-#                 if item.name.lower() == name.lower():
-#                     return item
-#
-#     def _create(self, name, cidr=None):
-#         network = self.driver.ex_create_network(cidr_block=cidr, name=name)
-#         return network
-#
-#
-# class EC2LibcloudSubnetController(core.LibcloudSubnetController):
-#
-#     def _ensure_exist(self, name):
-#         subnets = self.driver.ex_list_subnets()
-#         if subnets:
-#             for item in subnets:
-#                 if item.name.lower() == name.lower():
-#                     return item
-#
-#     def _create(self, name, vpc_id=None, cidr=None, a_zone=None):
-#         subnet = self.driver.ex_create_subnet(name=name,
-#                                               vpc_id=vpc_id,
-#                                               cidr_block=cidr,
-#                                               availability_zone=a_zone)
-#         return subnet
-#
-#
-# class EC2LibcloudNetworkInterfaceController(core.LibcloudNetworkInterfaceController):
-#
-#     def _ensure_exist(self, name):
-#         network_interfaces = self.driver.ex_list_network_interfaces()
-#         if network_interfaces:
-#             for item in network_interfaces:
-#                 if item.name.lower() == name.lower():
-#                     return item
-#
-#     def _create(self, name, subnet=None):
-#         # TODO security group should be set here
-#         network_interface = self.driver\
-#             .ex_create_network_interface(name=name, subnet=subnet)
-#         return network_interface
-
-
 class EC2LibcloudKeypairController(LibcloudKeypairController):
 
     def _ensure_exist(self, name):
@@ -468,7 +356,6 @@ class EC2LibcloudSGController(LibcloudSGController):
                     rule['port'],
                     group_pairs=[{'group_id': rule['group_id']}])
 
-    # def _create(self, name, description=None, rules=None, vpc_id=None):
     def _create(self, name, description=None, rules=None):
         if not description:
             raise RuntimeError("Must provide description"
@@ -586,7 +473,7 @@ class EC2LibcloudServerController(LibcloudServerController):
                 raise RuntimeError('Node failed to obtain state {0} in time'
                                    .format(state))
             time.sleep(5)
-            node = self.get_by_name(node.name)
+            node = self.get_by_id(node.id)
 
         return node
 
@@ -631,7 +518,6 @@ class EC2LibcloudUtilController(object):
 
 class EC2LibcloudValidator(LibcloudValidator):
 
-    # TODO support key pair validation (auto_generated, provided)
     def __init__(self,
                  provider_config,
                  validation_errors,
