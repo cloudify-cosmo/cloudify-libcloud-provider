@@ -32,6 +32,7 @@ import tempfile
 import shutil
 from fabric.context_managers import settings
 import errno
+import json
 
 
 CREATE_IF_MISSING = 'create_if_missing'
@@ -58,7 +59,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             connector, util_controller=self.util_controller)
 
     def copy_files_to_manager(self, mgmt_ip, ssh_key, ssh_user):
-        def _copy(userhome_on_management, agents_key_path):
+        def _copy(userhome_on_management, agents_key_path, connection_config):
             ssh_config = self.config['cloudify']['bootstrap']['ssh']
 
             env.user = ssh_user
@@ -77,8 +78,15 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             tempdir = tempfile.mkdtemp()
 
             put(agents_key_path, userhome_on_management + '/.ssh')
-
+            connection_file_path = _make_json_file(tempdir, connection_config)
+            put(connection_file_path, userhome_on_management)
             shutil.rmtree(tempdir)
+
+        def _make_json_file(tempdir, file_basename, data):
+            file_path = os.path.join(tempdir, file_basename + '.json')
+            with open(file_path, 'w') as f:
+                json.dump(data, f)
+            return file_path
 
         compute_config = self.config['compute']
         mgmt_server_config = compute_config['management_server']
@@ -87,7 +95,7 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             _copy(
                 mgmt_server_config['userhome_on_management'],
                 expanduser(compute_config['agent_servers']['agents_keypair'][
-                    'private_key_path']))
+                    'private_key_path']), self.config['connection'])
 
     def create_topology(self):
         resources = {}
