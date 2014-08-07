@@ -78,7 +78,9 @@ class EC2CosmoOnLibcloudDriver(CosmoOnLibcloudDriver):
             tempdir = tempfile.mkdtemp()
 
             put(agents_key_path, userhome_on_management + '/.ssh')
-            connection_file_path = _make_json_file(tempdir, 'connection_config', connection_config)
+            connection_file_path = _make_json_file(tempdir,
+                                                   'connection_config',
+                                                   connection_config)
             put(connection_file_path, userhome_on_management)
             shutil.rmtree(tempdir)
 

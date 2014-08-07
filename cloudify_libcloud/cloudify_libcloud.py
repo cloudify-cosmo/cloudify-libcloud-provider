@@ -64,6 +64,7 @@ class ProviderManager(BaseProviderClass):
             __init__(provider_config,
                      is_verbose_output)
         provider_name = provider_config['connection']['cloud_provider_name']
+        provider_name = transfer_cloud_provider_name(provider_name)
         from mapper import Mapper
         self.mapper = Mapper(provider_name)
 
@@ -169,6 +170,7 @@ class LibcloudConnector(object):
     def __init__(self, connection_config):
         self.connection_config = connection_config
         provider_name = self.connection_config['cloud_provider_name']
+        provider_name = transfer_cloud_provider_name(provider_name)
         from mapper import Mapper
         self.mapper = Mapper(provider_name)
         self.driver = self.mapper.connect(self.connection_config)
@@ -272,3 +274,7 @@ class LibcloudFloatingIpController(BaseController):
 class LibcloudServerController(BaseController):
 
     WHAT = "server"
+
+
+def transfer_cloud_provider_name(provider_name):
+    return provider_name.replace('-', '_')
