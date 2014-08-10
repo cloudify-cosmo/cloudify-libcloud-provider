@@ -13,9 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-__author__ = 'Oleksandr_Raskosov'
-
-
 from ec2 import (EC2CosmoOnLibcloudDriver,
                  EC2LibcloudUtilController,
                  EC2LibcloudFloatingIpController,

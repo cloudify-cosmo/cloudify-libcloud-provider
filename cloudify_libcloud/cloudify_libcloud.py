@@ -13,9 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-__author__ = 'Oleksandr_Raskosov'
-
-
 from cosmo_cli.cosmo_cli import init_logger
 from cosmo_cli.provider_common import BaseProviderClass
 from schemas import PROVIDER_CONFIG_SCHEMA

@@ -13,8 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-__author__ = 'Oleksandr_Raskosov'
-
 
 from setuptools import setup
 
@@ -22,8 +20,8 @@ from setuptools import setup
 setup(
     name='cloudify-libcloud-provider',
     version='1.0',
-    author='Oleksandr_Raskosov',
-    author_email='Oleksandr_Raskosov@epam.com',
+    author='Gigaspaces',
+    author_email='cosmo-admin@gigaspaces.com',
     packages=['cloudify_libcloud'],
     license='LICENSE',
     description='Cloudify Libclouod provider',
@@ -32,6 +30,6 @@ setup(
     install_requires=[
         'apache-libcloud==0.15.0',
         'IPy==0.81',
-        'cloudify-cli==3.0'
+        'cloudify==3.0'
     ]
 )

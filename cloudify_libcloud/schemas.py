@@ -13,9 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-__author__ = 'Oleksandr_Raskosov'
-
-
 PROVIDER_CONFIG_SCHEMA = {
     "type": "object",
     "required": [
