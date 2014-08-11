@@ -531,11 +531,12 @@ class EC2LibcloudValidator(LibcloudValidator):
     def __init__(self,
                  provider_config,
                  validation_errors,
+                 lgr,
                  util_controller=None,
                  floating_ip_controller=None,
                  server_controller=None):
         super(EC2LibcloudValidator, self)\
-            .__init__(provider_config, validation_errors)
+            .__init__(provider_config, validation_errors, lgr)
         self.util_controller = util_controller
         self.floating_ip_controller = floating_ip_controller
         self.server_controller = server_controller
@@ -544,10 +545,12 @@ class EC2LibcloudValidator(LibcloudValidator):
         if 'access_id' not in connection_config:
             err = 'config file validation error: connection:' \
                   ' access_id should be set for EC2 cloud'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('connection', []).append(err)
         if 'secret_key' not in connection_config:
             err = 'config file validation error: connection:' \
                   ' secret_key should be set for EC2 cloud'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('connection', []).append(err)
 
     def _validate_networking(self, networking_config):
@@ -556,6 +559,7 @@ class EC2LibcloudValidator(LibcloudValidator):
             err = 'config file validation error:' \
                   ' networking/management_security_group:' \
                   ' cidr wrong format'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('networking', []).append(err)
 
     def _validate_floating_ip(self, mng_config):
@@ -564,6 +568,7 @@ class EC2LibcloudValidator(LibcloudValidator):
             err = 'config file validation error:' \
                   ' management_server/floating_ip:' \
                   ' create_if_missing should be set for EC2 cloud'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('management_server', [])\
                 .append(err)
         else:
@@ -572,6 +577,7 @@ class EC2LibcloudValidator(LibcloudValidator):
                     err = 'config file validation error:' \
                           ' management_server/floating_ip:' \
                           ' ip should be set for EC2 cloud'
+                    self.lgr.error('VALIDATION ERROR: ' + err)
                     self.validation_errors.setdefault('management_server', [])\
                         .append(err)
                 else:
@@ -580,12 +586,14 @@ class EC2LibcloudValidator(LibcloudValidator):
                         err = 'config file validation error:' \
                               ' management_server/floating_ip:' \
                               ' ip wrong format'
+                        self.lgr.error('VALIDATION ERROR: ' + err)
                         self.validation_errors\
                             .setdefault('management_server', []).append(err)
                     if not self.floating_ip_controller.get(ip):
                         err = 'config file validation error:' \
                               ' management_server/floating_ip:' \
                               ' can\'t find ip {0} on EC2'.format(ip)
+                        self.lgr.error('VALIDATION ERROR: ' + err)
                         self.validation_errors\
                             .setdefault('management_server', []).append(err)
 
@@ -594,6 +602,7 @@ class EC2LibcloudValidator(LibcloudValidator):
             err = 'config file validation error:' \
                   ' management_server/instance:' \
                   ' size should be set for EC2 cloud'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('management_server', [])\
                 .append(err)
         image_name = instance_config['image']
@@ -603,6 +612,7 @@ class EC2LibcloudValidator(LibcloudValidator):
                   ' management_server/instance:' \
                   ' image \'{0}\' does not exist on EC2'\
                 .format(image_name)
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('management_server', [])\
                 .append(err)
         size_name = instance_config['size']
@@ -612,6 +622,7 @@ class EC2LibcloudValidator(LibcloudValidator):
                   ' management_server/instance:' \
                   ' size \'{0}\' does not exist on EC2'\
                 .format(size_name)
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('management_server', [])\
                 .append(err)
         instance_name = instance_config['name']
@@ -621,6 +632,7 @@ class EC2LibcloudValidator(LibcloudValidator):
                                         NodeState.TERMINATED]):
             err = 'config file validation error:' \
                   ' management_server should be in state Running'
+            self.lgr.error('VALIDATION ERROR: ' + err)
             self.validation_errors.setdefault('management_server', [])\
                 .append(err)
 

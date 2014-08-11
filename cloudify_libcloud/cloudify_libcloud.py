@@ -68,7 +68,7 @@ class ProviderManager(BaseProviderClass):
         from mapper import Mapper
         self.mapper = Mapper(provider_name)
 
-    def validate(self, validation_errors={}):
+    def validate(self):
         connection_conf = self.provider_config['connection']
         if not self.mapper.is_initialized():
             raise RuntimeError(
@@ -78,9 +78,10 @@ class ProviderManager(BaseProviderClass):
             )
 
         connector = LibcloudConnector(connection_conf)
+        validation_errors = {}
 
         validator = self.mapper.generate_validator(
-            connector, self.provider_config, validation_errors)
+            connector, self.provider_config, validation_errors, lgr)
 
         validator.validate()
 
@@ -181,9 +182,10 @@ class LibcloudConnector(object):
 
 class LibcloudValidator(object):
 
-    def __init__(self, provider_config, validation_errors, **kwargs):
+    def __init__(self, provider_config, validation_errors, lgr, **kwargs):
         self.provider_config = provider_config
         self.validation_errors = validation_errors
+        self.lgr = lgr
 
     @abc.abstractmethod
     def validate(self):
