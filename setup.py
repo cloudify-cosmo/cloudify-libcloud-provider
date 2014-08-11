@@ -28,7 +28,7 @@ setup(
     package_data={'cloudify_libcloud': ['cloudify-config.yaml',
                                         'cloudify-config.defaults.yaml']},
     install_requires=[
-        'apache-libcloud==0.15.0',
+        'apache-libcloud==0.15.1',
         'IPy==0.81',
         'cloudify==3.0'
     ]

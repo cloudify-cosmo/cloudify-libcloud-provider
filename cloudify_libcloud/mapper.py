@@ -77,7 +77,8 @@ class Mapper(object):
     def generate_validator(self,
                            connector,
                            provider_config,
-                           validation_errors):
+                           validation_errors,
+                           lgr):
         if self.core_provider == Provider.EC2:
             util_controller = EC2LibcloudUtilController(connector)
             floating_ip_controller =\
@@ -86,6 +87,7 @@ class Mapper(object):
             validator = EC2LibcloudValidator(
                 provider_config,
                 validation_errors,
+                lgr,
                 util_controller=util_controller,
                 floating_ip_controller=floating_ip_controller,
                 server_controller=server_controller)
