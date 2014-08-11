@@ -74,6 +74,6 @@ compute:
 #            initial_connectivity_retries: 20
 #            initial_connectivity_retries_interval: 15
 #            command_retries: 3
-#            retries_interval: 3
-#            connection_attempts: 1
+#            retries_interval: 15
+#            connection_attempts: 20
 #            socket_timeout: 10
