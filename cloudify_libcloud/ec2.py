@@ -441,7 +441,7 @@ class EC2LibcloudFloatingIpController(LibcloudFloatingIpController):
 
     def is_quota_exceeded(self):
         limits = self.driver.ex_get_limits()
-        elastic_ip_limit = limits.get('resource', '{}').get('max-elastic-ips')
+        elastic_ip_limit = limits['resource']['max-elastic-ips']
         total_elastic_ips = len(self.driver.ex_describe_all_addresses())
 
         if total_elastic_ips >= elastic_ip_limit:
