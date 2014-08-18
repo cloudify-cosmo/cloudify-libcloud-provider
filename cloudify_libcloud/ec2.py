@@ -439,6 +439,14 @@ class EC2LibcloudFloatingIpController(LibcloudFloatingIpController):
         self.driver.ex_disassociate_address(item)
         self.driver.ex_release_address(item)
 
+    def is_quota_exceeded(self):
+        limits = self.driver.ex_get_limits()
+        elastic_ip_limit = limits['resource']['max-elastic-ips']
+        total_elastic_ips = len(self.driver.ex_describe_all_addresses())
+
+        if total_elastic_ips >= elastic_ip_limit:
+            return True
+        return False
 
 class EC2LibcloudServerController(LibcloudServerController):
 
@@ -594,6 +602,15 @@ class EC2LibcloudValidator(LibcloudValidator):
                         self.lgr.error('VALIDATION ERROR: ' + err)
                         self.validation_errors\
                             .setdefault('management_server', []).append(err)
+            else:
+                quota_exceeded = self.floating_ip_controller.is_quota_exceeded()
+                if quota_exceeded:
+                    err = 'config file validation error:' \
+                          ' resource elastic-ip quota limit exceeded:' \
+                          ' can\'t allocate new elastic-ip'
+                    self.lgr.error('VALIDATION ERROR: ' + err)
+                    self.validation_errors \
+                        .setdefault('management_server', []).append(err)
 
     def _validate_instance(self, instance_config):
         if 'size' not in instance_config:
