@@ -19,17 +19,17 @@ from setuptools import setup
 
 setup(
     name='cloudify-libcloud-provider',
-    version='1.0',
+    version='1.1a3',
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['cloudify_libcloud'],
     license='LICENSE',
-    description='Cloudify Libclouod provider',
+    description='Cloudify Libcloud provider',
     package_data={'cloudify_libcloud': ['cloudify-config.yaml',
                                         'cloudify-config.defaults.yaml']},
     install_requires=[
         'apache-libcloud==0.15.1',
         'IPy==0.81',
-        'cloudify==3.0'
+        'cloudify==3.1a3'
     ]
 )
