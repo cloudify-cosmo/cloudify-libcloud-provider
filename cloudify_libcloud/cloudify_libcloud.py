@@ -13,8 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from cosmo_cli.cosmo_cli import init_logger
-from cosmo_cli.provider_common import BaseProviderClass
+from cloudify_cli.logger import lgr
+from cloudify_cli.provider_common import BaseProviderClass
 from schemas import PROVIDER_CONFIG_SCHEMA
 
 import libcloud.security
@@ -31,9 +31,6 @@ libcloud.security.VERIFY_SSL_CERT = False
 CREATE_IF_MISSING = 'create_if_missing'
 
 verbose_output = False
-
-# initialize logger
-lgr, flgr = init_logger()
 
 
 class ProviderManager(BaseProviderClass):
