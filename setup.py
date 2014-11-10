@@ -19,7 +19,7 @@ from setuptools import setup
 
 setup(
     name='cloudify-libcloud-provider',
-    version='1.1rc1',
+    version='1.1rc2',
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['cloudify_libcloud'],
@@ -30,6 +30,6 @@ setup(
     install_requires=[
         'apache-libcloud==0.15.1',
         'IPy==0.81',
-        'cloudify==3.1rc1'
+        'cloudify==3.1rc2'
     ]
 )
