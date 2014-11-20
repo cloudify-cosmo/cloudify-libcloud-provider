@@ -13,18 +13,16 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from cloudify_cli.logger import lgr
-from cloudify_cli.provider_common import BaseProviderClass
-from schemas import PROVIDER_CONFIG_SCHEMA
-
-import libcloud.security
-
 import abc
 import os
-from os.path import expanduser
 import errno
+import libcloud.security
+from os.path import expanduser
 from IPy import IP
+from schemas import PROVIDER_CONFIG_SCHEMA
 
+from cloudify_cli.provider_common import BaseProviderClass
+from cloudify_cli.logger import get_logger
 
 libcloud.security.VERIFY_SSL_CERT = False
 
@@ -75,12 +73,12 @@ class ProviderManager(BaseProviderClass):
         validation_errors = {}
 
         validator = self.mapper.generate_validator(
-            connector, self.provider_config, validation_errors, lgr)
+            connector, self.provider_config, validation_errors, self.logger)
 
         validator.validate()
 
-        lgr.error('resource validation failed!') if validation_errors \
-            else lgr.info('resources validated successfully')
+        self.logger.error('resource validation failed!') if validation_errors \
+            else self.logger.info('resources validated successfully')
 
         return validation_errors
 
@@ -118,6 +116,7 @@ class CosmoOnLibcloudDriver(object):
         self.provider_context = provider_context
         global verbose_output
         self.verbose_output = verbose_output
+        self.logger = get_logger()
 
     @abc.abstractmethod
     def create_topology(self):
@@ -150,7 +149,7 @@ class CosmoOnLibcloudDriver(object):
             .format(format_resources_data_for_print(
                 failed_to_delete_resources))
 
-        lgr.info(
+        self.logger.info(
             'Finished deleting topology;\n'
             '{0}{1}{2}'
             .format(
@@ -197,6 +196,7 @@ class BaseController(object):
 
     def __init__(self, connector, **kwargs):
         self.driver = connector.get_driver()
+        self.logger = get_logger()
 
     @abc.abstractmethod
     def _ensure_exist(self, name):
@@ -248,8 +248,8 @@ class LibcloudKeypairController(BaseController):
     def _mkdir(self, path):
         path = expanduser(path)
         try:
-            lgr.debug('creating dir {0}'
-                      .format(path))
+            self.logger.debug('creating dir {0}'
+                              .format(path))
             os.makedirs(path)
         except OSError, exc:
             if exc.errno == errno.EEXIST and os.path.isdir(path):

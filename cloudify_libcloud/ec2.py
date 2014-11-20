@@ -448,6 +448,7 @@ class EC2LibcloudFloatingIpController(LibcloudFloatingIpController):
             return True
         return False
 
+
 class EC2LibcloudServerController(LibcloudServerController):
 
     def __init__(self, connector, util_controller=None):
@@ -603,7 +604,8 @@ class EC2LibcloudValidator(LibcloudValidator):
                         self.validation_errors\
                             .setdefault('management_server', []).append(err)
             else:
-                quota_exceeded = self.floating_ip_controller.is_quota_exceeded()
+                quota_exceeded = self.floating_ip_controller\
+                    .is_quota_exceeded()
                 if quota_exceeded:
                     err = 'config file validation error:' \
                           ' resource elastic-ip quota limit exceeded:' \
