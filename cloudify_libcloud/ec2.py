@@ -39,7 +39,7 @@ TIMEOUT = 3000
 
 # declare which ports should be opened during provisioning
 EXTERNAL_MGMT_PORTS = (22, 8100, 80)  # SSH, REST service (TEMP), REST and UI
-INTERNAL_MGMT_PORTS = (5555, 5672, 53229)  # Riemann, RabbitMQ, FileServer
+INTERNAL_MGMT_PORTS = (5555, 5672, 53229, 8101) # Riemann, RabbitMQ, FileServer, Internal REST  # NOQA
 INTERNAL_AGENT_PORTS = (22,)
 
 
